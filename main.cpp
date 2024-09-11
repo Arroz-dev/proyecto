@@ -1,106 +1,145 @@
 #include <SFML/Graphics.hpp>
+#include <vector> //para acceder a las posiciones de los sprites de los personajes
 #include <iostream>
-#include <conio.h>
-
-using namespace sf;
+#include <sstream>
 using namespace std;
+using namespace sf; //para no poner sf:: en los atributos de SFML
+
+//etructura para los tipos de hechizos de la clase mago
+struct Hechizos{
+	string nombre;
+	int poder;
+	int costo_mana;
+	Hechizo(string _nombre,int _poder,int _costo_mana) {}
+};
+
+
+class Personajes: public Sprite{
+	public:
+		int vida = 100;
+		int fuerza = 12;
+		int defenza = 5;
+		int velocidad = 10;
+		string nombre;
+		int k = 40;
+		Personajes(Texture& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre){
+			this->setTexture(texture);
+			vida = _vida;
+			fuerza = _fuerza;
+			defenza = _defenza;
+			velocidad = _velocidad;
+			nombre = _nombre;
+		}
+		
+		int mostrar_vida(){
+			return vida;
+		}
+		
+		string mostrar_nombre(){
+			return nombre;
+		}
+		
+		virtual void atacar(Personajes& objetivo) = 0;
+		
+		virtual void recibir_damage(int damage){
+			int damage_real = calcular_damage(damage);
+			
+			vida -=damage_real;
+			if(vida < 0) vida = 0;
+		}
+		
+		protected:
+			int calcular_damage(int damage_base){
+				return static_cast<int>(damage_base*(1.0 - static_cast<float>(defenza) / (defenza+k))); //teniendo en cuenta la defenza y el ataque;
+			}
+
+};
+
+class Slime: public Personajes{
+	public:
+		vector<Texture> slimetexture;
+		int currenFrame = 0;
+		float frameDuration = 0.2f;
+		Clock animationClock;
+		Slime(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre): 
+		Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), slimetexture(texture) {}
+		void atacar(Personajes& objetivo)override{
+			objetivo.recibir_damage(fuerza);
+		}
+		
+		void update(){
+			if(animationClock.getElapsedTime().asSeconds() > frameDuration){
+				currenFrame = (currenFrame + 1) % slimetexture.size();
+				this->setTexture(slimetexture[currenFrame]);
+				animationClock.restart();
+			}
+			this->setPosition(100.0f,400.0f);
+		}
+		
+
+};
+
+class Guerrero: public Personajes{
+	public:
+		vector<Texture> guerrerotexture;
+		int currenFrame = 0;
+		float frameDuration = 0.2f;
+		Clock animationClock;
+		Guerrero(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre):
+			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), guerrerotexture(texture){}
+			
+			void atacar(Personajes& objetivo)override{
+				objetivo.recibir_damage(fuerza);
+			}
+			
+			void update_guerrero(){
+				if(animationClock.getElapsedTime().asSeconds() > frameDuration){
+					currenFrame =(currenFrame + 1) % guerrerotexture.size();
+				}
+			}
+};
+
+class Mago: public Personajes{
+	public:
+		vector<Texture> magotexture;
+		int currenFrame = 0;
+		float frameDuration = 0.2f;
+		Clock animationClock;
+		int poder_magico = 40;
+		Mago(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre,int _poder_magico):
+			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), poder_magico(_poder_magico), magotexture(texture) {}
+			
+			
+};
 
 int main(){
-	RenderWindow window(VideoMode(800,600),"Mi primer intento",Style::Default);
-	//window.setSize(Vector2u(840,650)); //cambiar el tamaño de la ventana
-	//window.setTitle("Hello world"); //cambiar el titulo
-
+	RenderWindow window(VideoMode(800,600),"RPG maker");
 	
-	//bool focus = window.hasFocus();
-	Vector2u size = window.getSize();
-	window.setVerticalSyncEnabled(true); //para que que las imagenes no se desfracmenten (no importa mucho ponerlo)
-	window.setFramerateLimit(60); //para control la velocidad del juego
-	//jamas ocupar estos 2 de arriba al mismo tiempo, ocacionara una ambiguedad 
-	CircleShape circulo(50);
-	circulo.setFillColor(Color::Black);
-	circulo.setPosition(500,400);
-	
-	RectangleShape rectangulo(Vector2f(40,100));
-	rectangulo.setFillColor(Color::White);
-	rectangulo.setPosition(100,400);
-	
-	
-	Texture hoja_sprites;
-	if(!hoja_sprites.loadFromFile("imagenes/wolfsheet1.png")){
-		std::cout<<"Error al cargar el sprite"<<std::endl;
-		return -1;
+	vector<Texture> slimetexture(4); //5 imagenes del slime;
+	for(int i=0;i<4;i++){
+		ostringstream ss;
+		ss<<(i+1);
+		string slimeFilename = "Sprite2/slime" + ss.str()+ ".jpg";
+		if(!slimetexture[i].loadFromFile(slimeFilename)){
+			cout<<"error al cargar la textura";
+			return -1;
+		}
 	}
 	
-	Sprite sprite;
-	sprite.setTexture(hoja_sprites);
-	int ancho = hoja_sprites.getSize().x / 4;
-	int alto = hoja_sprites.getSize().y;
-	int margen = 1;
-	sprite.setOrigin(ancho/2,alto/2);
-	sprite.setPosition(size.x / 2, size.y/2);
-	//posicion 
-	sprite.setPosition(300.f,200.f);
-	//rotacion
-	sprite.setRotation(70.f);
-	Font font;
-	if(!font.loadFromFile("PixelifySans-Bold.ttf")){
-		cout<<"Error no se cargo la fuente "<<endl;
-	}
-	
-	Text text;
-	text.setFont(font);
-	text.setString("Hola mundo");
-	text.setCharacterSize(30);
-	text.setFillColor(Color::White);
-	text.setPosition(200.f,100.f);
-
-	
-	Text PlayerMessage;
-	PlayerMessage.setFont(font);
-	PlayerMessage.setCharacterSize(25);
-	PlayerMessage.setFillColor(Color::Red);
-	PlayerMessage.setPosition(300.f,200.f);
-	bool mostrar_mensaje = false;
-	
-	Clock clock;
-	
-	float duracion = 0.2f;
-	int currentFrame = 0;
-	
-	
-	
+	Slime slime(slimetexture,100,12,14,12,"Slime");
+	slime.setScale(0.5f,0.5f);
 	while(window.isOpen()){
 		Event event;
 		while(window.pollEvent(event)){
 			if(event.type == Event::Closed){
 				window.close();
 			}
-			
 		}
 		
-		if(Keyboard::isKeyPressed(Keyboard::Space)){
-			mostrar_mensaje = true;
-			PlayerMessage.setString("el usuario a precionado una tecla!!!!");
-			getch();
-		}else{
-			mostrar_mensaje = false;
-		}
-		
-		if(clock.getElapsedTime().asSeconds() > duracion){
-			currentFrame = (currentFrame + 1) % 4;
-			sprite.setTextureRect(IntRect(currentFrame * ancho + margen,0,ancho - 2 * margen,alto));
-			clock.restart();
-		}
-		
+		slime.update();
 		
 		window.clear(Color::Black);
-		window.draw(sprite);
-		window.draw(text);
-		if(mostrar_mensaje){
-			window.draw(PlayerMessage);
-		}
-		//window.draw(circulo);
-		//window.draw(rectangulo);
+		window.draw(slime);
 		window.display();
 	}
 	
