@@ -59,8 +59,11 @@ class Slime: public Personajes{
 		Slime(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre): 
 		Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), slimetexture(texture) {}
 		void atacar(Personajes& objetivo)override{
-			objetivo.recibir_damage(fuerza);
+			objetivo.recibir_damage(25+rand()%35);
 		}
+		
+
+		
 		//animacion de los sprites
 		void update(){
 			if(animationClock.getElapsedTime().asSeconds() > frameDuration){
@@ -74,18 +77,38 @@ class Slime: public Personajes{
 		
 
 };
+//tipo de espadas
+struct TipoEspada{
+	string tipo;
+	int damage;
+	TipoEspada(string _tipo,int _damage): tipo(_tipo), damage(_damage) {}
+};
+
 //animando a esta clase
 class Guerrero: public Personajes{
 	public:
 		vector<Texture> guerrerotexture;
+		vector<TipoEspada> espada;
 		int currenFrame = 0;
 		float frameDuration = 0.2f;
 		Clock animationClock;
+		int indice_espada;
 		Guerrero(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre):
-			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), guerrerotexture(texture){}
+			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), guerrerotexture(texture){
+			espada.push_back(TipoEspada("Normal",14+rand() % 20));
+			espada.push_back(TipoEspada("Rara",20+rand()%35));
+			espada.push_back(TipoEspada("Lengendaria",45+rand()%80));
+			}
 			
 			void atacar(Personajes& objetivo)override{
-				objetivo.recibir_damage(fuerza);
+				int total_damage = fuerza + espada[indice_espada].damage;
+				objetivo.recibir_damage(total_damage);
+			}
+			
+			void espada_equipada(int indice){
+				if(indice >= 0 && indice < espada.size()){
+					indice_espada = indice;
+				}
 			}
 			//con esta funcion se animaran sus sprites
 			void update_guerrero(){
@@ -102,23 +125,35 @@ class Guerrero: public Personajes{
 struct Hechizos{
 	string nombre;
 	int poder;
-	Hechizo(string _nombre,int _poder) {}
+	Hechizos(string _nombre,int _poder) {}
 };
 
 //animando al mago
 class Mago: public Personajes{
 	public:
 		vector<Texture> magotexture;
+		vector<Hechizos> magia;
 		int currenFrame = 0;
 		float frameDuration = 0.2f;
 		Clock animationClock;
-		int poder_magico = 40;
-		Mago(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre,int _poder_magico):
-			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), poder_magico(_poder_magico), magotexture(texture) {}
+		int poder_magico;
+		Mago(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre):
+			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), magotexture(texture) {
+			magia.push_back(Hechizos("Rayo",40+rand() % 65));
+			magia.push_back(Hechizos("Fuergo",20 + rand() % 35));
+			magia.push_back(Hechizos("Agua",18 + rand() % 30));
+			}
 			
 		
 		void  atacar(Personajes& objetivo)override{
-			objetivo.recibir_damage(poder_magico);
+			int total_damage = magia[poder_magico].poder;
+			objetivo.recibir_damage(total_damage);
+		}
+		
+		void equipar_hechizo(int indice){
+			if(indice >= 0 && indice < magia.size()){
+				poder_magico = indice;
+			}
 		}
 		//funcion para animar los sprites
 		void update_Mago(){
@@ -128,20 +163,35 @@ class Mago: public Personajes{
 				animationClock.restart();
 			}
 		}
-		
 };
+
+struct TipoArco{
+	string tipo;
+	int damage;
+	TipoArco(string _tipo,int _damage): tipo(_tipo), damage(_damage) {}
+};
+
 //animando al elfo
 class Elfo: public Personajes{
 	public:
 		vector<Texture> elfotexture;
+		vector<TipoArco> arco;
 		int currenFrame = 0;
 		float animationDuration = 0.2f;
 		Clock animationClock;
+		int arco_indice;
 		Elfo(vector<Texture>& texture,int _vida,int _fuerza,int _defenza,int _velocidad,string _nombre):
 			Personajes(texture[0],_vida,_fuerza,_defenza,_velocidad,_nombre), elfotexture(texture) {}
 		
 		void atacar(Personajes& objetivo)override{
-			objetivo.recibir_damage(40);
+			int total_damage = fuerza + arco[arco_indice].damage;
+			objetivo.recibir_damage(total_damage);
+		}
+		
+		void equipar_arco(int indice){
+			if(indice>= 0 && indice < arco.size()){
+				arco_indice = indice;
+			}
 		}
 		//animando los sprites del elfo
 		void update_Elfo(){
@@ -150,6 +200,7 @@ class Elfo: public Personajes{
 				this->setTexture(elfotexture[currenFrame]);
 				animationClock.restart();
 			}
+			this->setPosition(750.0f,400.0f);
 		}
 };
 
@@ -179,6 +230,18 @@ class Esqueleto: public Personajes{
 				}
 			}
 		
+};
+
+//animando el siclope
+class Siclope: public Personajes{
+	public:
+		vector<Texture> siclopetexture;
+		int currenFrame = 0;
+		float animationDuration = 0.2f;
+		Clock animationClock;
+		Siclope(vector<Texture>& texture,int _vida,int _fuerza,int _defensa,int _velocidad,string _nombre):
+			Personajes(texture[0],_vida,_fuerza,_defensa,_velocidad,_nombre), siclopetexture(texture) {}
+
 };
 //animando al minotauro
 class Minotauro: public Personajes{
@@ -214,26 +277,33 @@ int main(){
 	srand(time(0));
 	RenderWindow window(VideoMode(800,600),"The war vs demon kings");
 	
-	vector<Texture> slimetexture(4); //5 imagenes del slime;
-	for(int i=0;i<4;i++){
+	vector<Texture> slimetexture(3); //5 imagenes del slime;
+	for(int i=0;i<3;i++){
 		ostringstream ss;
 		ss<<(i+1);
-		string slimeFilename = "Sprite2/slime" + ss.str()+ ".jpg";
+		string slimeFilename = "Sprite2/slime" + ss.str() + ".png";
 		if(!slimetexture[i].loadFromFile(slimeFilename)){
 			cout<<"error al cargar la textura";
-			return -1;
+			//return -1;
 		}
 	}
-	Texture texture;
-	if(!texture.loadFromFile("Sprite2/prueva2.png")){
-		return -1;
-	}
 	
-	Sprite sprite;
-	sprite.setTexture(texture);
+	vector<Texture> elfotexture(2);
+	for(int i=0;i<2;i++){
+		ostringstream ss;
+		ss<<(i+1);
+		string elfoFilname = "Sprite1/elf"+ss.str()+".png";
+		if(!elfotexture[i].loadFromFile(elfoFilname)){
+			cout<<"Error al cargar la textura";
+			//return -1;
+		}
+	}
+
 	
 	Slime slime(slimetexture,100,12,14,12,"Slime");
 	slime.setScale(0.5f,0.5f);
+	Elfo elfo(elfotexture,100,14,21,21,"Elfo");
+	elfo.setScale(-0.5f,0.5f); //con el -0.5f movemos el eje x del sprite
 	while(window.isOpen()){
 		Event event;
 		while(window.pollEvent(event)){
@@ -241,12 +311,16 @@ int main(){
 				window.close();
 			}
 		}
+		//while(elfo.mostrar_vida() > 0 && slime.mostrar_vida()){
+			//nos quedamos aqui, implementaremos el ataque desde la clase elfo con un bool
+		//}
 		
 		slime.update();
-		
-		window.clear(Color::White);
-		window.draw(sprite);
+		elfo.update_Elfo();
+
+		window.clear(Color::Black);
 		window.draw(slime);
+		window.draw(elfo);
 		window.display();
 	}
 	
